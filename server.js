@@ -47,7 +47,7 @@ app.get('/api/servicios/:categoria', (req, res) => {
   }
 
   const query = `
-    SELECT nombre, precio
+    SELECT id_servicio, nombre, precio
     FROM servicios
     WHERE categoria = ?
   `;
