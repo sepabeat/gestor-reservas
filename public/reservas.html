@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Cita</title>
+    <link rel="stylesheet" href="./css/styles.css">
+    <script src="./js/reservas.js" defer></script>
+</head>
+<body>
+
+<header>
+    <h1>Reservar Cita</h1>
+    <nav>
+        <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="reservas.html">Reservar</a></li>
+            <li><a href="#">Mis Reservas</a></li>
+            <li><a href="#">Iniciar Sesión</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <section id="formularioReserva">
+        <h2>Selecciona tu servicio</h2>
+
+        <form id="reservaForm">
+            <label for="tipo">Tipo de Servicio:</label>
+            <select id="tipo" name="tipo">
+                <option value="salon_belleza">Salón de Belleza</option>
+                <option value="peluqueria_canina">Peluquería Canina</option>
+            </select>
+
+            <label for="servicio">Servicio:</label>
+            <select id="servicio" name="servicio">
+                <option value="">Selecciona un tipo de peluquería primero</option>
+            </select>
+
+            <label for="fecha">Fecha y Hora:</label>
+            <input type="datetime-local" id="fecha" name="fecha" required>
+
+            <button type="submit">Reservar</button>
+        </form>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2025 Gestor de Reservas</p>
+</footer>
+
+</body>
+</html>

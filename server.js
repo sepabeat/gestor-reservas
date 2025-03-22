@@ -1,11 +1,15 @@
 // Importar dependencias
 const express = require('express');
+const cors = require('cors'); // Importamos paquete cors
 const mysql = require('mysql2');
 require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const app = express();
-const bcrypt = require('bcryptjs'); // Para la encriptación de contraseñas
-const jwt = require('jsonwebtoken');  // Para generar y verificar JWT
 const port = 3000;
+
+// Habilitar CORS
+app.use(cors());  // Esto permite solicitudes de cualquier origen, pero también puedes restringirlo a ciertos orígenes si es necesario
 
 // Middleware para procesar el cuerpo de las solicitudes en formato JSON
 app.use(express.json());
@@ -16,7 +20,7 @@ const db = mysql.createConnection({
   user: 'root',              // Usuario de MySQL (cambiar si es necesario)
   password: '',              // Contraseña de MySQL (cambiar si es necesario)
   database: 'gestor_reservas',
-  port: 3307                // MySQL de mi pc está en el puerto 3307
+  port: 3307                 // MySQL de mi pc está en el puerto 3307
 });
 
 // Conexión a la base de datos
@@ -28,44 +32,37 @@ db.connect(err => {
   console.log('Conectado a la base de datos MySQL.');
 });
 
-// Middleware para verificar el token JWT
-const verificarToken = (req, res, next) => {
-  const token = req.header('Authorization');  // El token se espera en el encabezado 'Authorization'
-
-  if (!token) {
-    return res.status(403).send('Acceso denegado. No se ha proporcionado un token');
-  }
-
-  try {
-    // Verificar el token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.usuario = decoded;  // Almacenar la información del usuario en la solicitud
-    next();
-  } catch (err) {
-    console.error('Error al verificar el token:', err);
-    res.status(400).send('Token no válido');
-  }
-};
-
 // Ruta de inicio
 app.get('/', (req, res) => {
   res.send('¡Servidor funcionando!');
 });
 
-// Ruta para obtener todos los servicios disponibles
-app.get('/api/servicios', (req, res) => {
-  db.query('SELECT * FROM servicios', (err, results) => {
+// **1. Ruta para obtener los servicios según el tipo de peluquería**
+app.get('/api/servicios/:categoria', (req, res) => {
+  const { categoria } = req.params;
+
+  // Validar que el tipo sea correcto
+  if (categoria !== 'salon_belleza' && categoria !== 'peluqueria_canina') {
+    return res.status(400).send('Tipo de peluquería no válido');
+  }
+
+  const query = `
+    SELECT nombre, precio
+    FROM servicios
+    WHERE categoria = ?
+  `;
+
+  db.query(query, [categoria], (err, results) => {
     if (err) {
-      console.error('Error al obtener los servicios:', err);
-      res.status(500).send('Error al obtener los servicios');
-    } else {
-      res.json(results);
+      console.error('Error al obtener servicios:', err);
+      return res.status(500).send('Error al obtener servicios');
     }
+    res.json(results);
   });
 });
 
 // **2. Ruta para crear una nueva reserva**
-app.post('/api/reservas', verificarToken, (req, res) => {
+app.post('/api/reservas', (req, res) => {
   const { id_usuario, fecha_hora, servicios } = req.body;
 
   // Insertar la reserva principal
@@ -95,7 +92,7 @@ app.post('/api/reservas', verificarToken, (req, res) => {
 });
 
 // **3. Ruta para obtener todas las reservas**
-app.get('/api/reservas', verificarToken, (req, res) => {
+app.get('/api/reservas', (req, res) => {
   db.query('SELECT * FROM reservas', (err, results) => {
     if (err) {
       console.error('Error al obtener las reservas:', err);
@@ -107,7 +104,7 @@ app.get('/api/reservas', verificarToken, (req, res) => {
 });
 
 // **4. Ruta para actualizar una reserva**
-app.put('/api/reservas/:id_reserva', verificarToken, (req, res) => {
+app.put('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
   const { fecha_hora, servicios } = req.body;
 
@@ -144,7 +141,7 @@ app.put('/api/reservas/:id_reserva', verificarToken, (req, res) => {
 });
 
 // **5. Ruta para eliminar una reserva**
-app.delete('/api/reservas/:id_reserva', verificarToken, (req, res) => {
+app.delete('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
 
   // Eliminar la reserva
@@ -164,8 +161,8 @@ app.delete('/api/reservas/:id_reserva', verificarToken, (req, res) => {
   });
 });
 
-// Ruta para obtener todas las reservas de un usuario específico
-app.get('/api/reservas/:id_usuario', verificarToken, (req, res) => {
+// **6. Ruta para obtener todas las reservas de un usuario específico**
+app.get('/api/reservas/:id_usuario', (req, res) => {
   const { id_usuario } = req.params;
   const query = `
     SELECT reservas.id_reserva, reservas.fecha_hora, reservas.estado,
@@ -193,7 +190,7 @@ app.get('/api/reservas/:id_usuario', verificarToken, (req, res) => {
   });
 });
 
-// **6. Ruta de registro de usuario (encriptación de contraseñas)**
+// **7. Ruta de registro de usuario (encriptación de contraseñas)**
 app.post('/api/register', async (req, res) => {
   const { nombre_usuario, password, email } = req.body;
 
@@ -217,7 +214,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// **7. Ruta de login para el usuario (comparar contraseñas y generar JWT)**
+// **8. Ruta de login para el usuario (comparar contraseñas y generar JWT)**
 app.post('/api/login', (req, res) => {
   const { nombre_usuario, password } = req.body;
 
@@ -233,24 +230,26 @@ app.post('/api/login', (req, res) => {
       return res.status(400).send('Usuario no encontrado');
     }
 
-    const usuario = results[0];
+    const user = results[0];  // El primer resultado (solo debería haber uno)
 
-    // Comparar la contraseña proporcionada con la almacenada en la base de datos
-    const isMatch = await bcrypt.compare(password, usuario.password_hash);
-    if (!isMatch) {
-      return res.status(400).send('Contraseña incorrecta');
+    // Comparar la contraseña ingresada con la almacenada
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (isMatch) {
+      // Generar el JWT
+      const token = jwt.sign({ id_usuario: user.id_usuario }, process.env.JWT_SECRET, {
+        expiresIn: '1h',  // El token expirará en 1 hora
+      });
+
+      // Devolver el JWT al usuario
+      res.status(200).json({ token });
+    } else {
+      res.status(400).send('Contraseña incorrecta');
     }
-
-    // Generar el token JWT
-    const token = jwt.sign({ id_usuario: usuario.id_usuario }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
-
-    res.json({ token });
   });
 });
 
-// Iniciar el servidor
+// Arrancar el servidor
 app.listen(port, () => {
-  console.log(`Servidor escuchando en el puerto ${port}`);
+  console.log(`Servidor escuchando en http://localhost:${port}`);
 });
