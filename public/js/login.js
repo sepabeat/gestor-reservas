@@ -3,7 +3,7 @@ document.getElementById('login-form').addEventListener('submit', function(event)
   event.preventDefault();  // Evitar el comportamiento por defecto del formulario
 
   // Recoger los datos del formulario
-  const username = document.getElementById('username').value;
+  const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
 
   // Enviar los datos al servidor para la autenticación
@@ -12,16 +12,21 @@ document.getElementById('login-form').addEventListener('submit', function(event)
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ nombre_usuario: username, password: password }),
+    body: JSON.stringify({ email: email, password: password }),
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {  // Verificar si la respuesta no fue OK
+      throw new Error('Error en la autenticación');
+    }
+    return response.json();
+  })
   .then(data => {
     if (data.token) {
       // Almacenar el token JWT en el localStorage o sessionStorage
       localStorage.setItem('jwtToken', data.token);
       alert('Inicio de sesión exitoso');
-      // Redirigir o hacer algo con el usuario logueado
-      window.location.href = 'dashboard.html';  // Puedes redirigir a una página de inicio o dashboard
+      // Redirigir a una página de inicio o dashboard
+      window.location.href = 'index.html';  // Redirigir a la página correspondiente
     } else {
       alert('Credenciales incorrectas');
     }

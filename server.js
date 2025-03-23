@@ -1,12 +1,12 @@
-// Importar dependencias
+// 0 Importar dependencias
 const express = require('express');
 const cors = require('cors'); // Importamos paquete cors
 const mysql = require('mysql2');
 require('dotenv').config();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = 3000;
+const path = require('path');
 
 // Habilitar CORS
 app.use(cors());  // Esto permite solicitudes de cualquier origen, pero también puedes restringirlo a ciertos orígenes si es necesario
@@ -14,7 +14,10 @@ app.use(cors());  // Esto permite solicitudes de cualquier origen, pero también
 // Middleware para procesar el cuerpo de las solicitudes en formato JSON
 app.use(express.json());
 
-// Conexión con la base de datos
+// Servir archivos estáticos desde "public"
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 1 Conexión con la base de datos
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',              // Usuario de MySQL (cambiar si es necesario)
@@ -23,7 +26,7 @@ const db = mysql.createConnection({
   port: 3307                 // MySQL de mi pc está en el puerto 3307
 });
 
-// Conexión a la base de datos
+// 1.1 Conexión a la base de datos
 db.connect(err => {
   if (err) {
     console.error('Error al conectar con la base de datos:', err);
@@ -32,12 +35,12 @@ db.connect(err => {
   console.log('Conectado a la base de datos MySQL.');
 });
 
-// Ruta de inicio
+// 2 Ruta de inicio
 app.get('/', (req, res) => {
   res.send('¡Servidor funcionando!');
 });
 
-// **1. Ruta para obtener los servicios según el tipo de peluquería**
+// 2.1 Ruta para obtener los servicios según el tipo de peluquería**
 app.get('/api/servicios/:categoria', (req, res) => {
   const { categoria } = req.params;
 
@@ -61,11 +64,11 @@ app.get('/api/servicios/:categoria', (req, res) => {
   });
 });
 
-// **2. Ruta para crear una nueva reserva**
+// 3. Ruta para crear una nueva reserva**
 app.post('/api/reservas', (req, res) => {
   const { id_usuario, fecha_hora, servicios } = req.body;
 
-  // Insertar la reserva principal
+  // 3.1 Insertar la reserva principal
   const queryReserva = 'INSERT INTO reservas (id_usuario, fecha_hora, estado) VALUES (?, ?, ?)';
   db.query(queryReserva, [id_usuario, fecha_hora, 'pendiente'], (err, result) => {
     if (err) {
@@ -91,7 +94,7 @@ app.post('/api/reservas', (req, res) => {
   });
 });
 
-// **3. Ruta para obtener todas las reservas**
+// 3.2 Ruta para obtener todas las reservas**
 app.get('/api/reservas', (req, res) => {
   db.query('SELECT * FROM reservas', (err, results) => {
     if (err) {
@@ -103,12 +106,12 @@ app.get('/api/reservas', (req, res) => {
   });
 });
 
-// **4. Ruta para actualizar una reserva**
+// 3.3. Ruta para actualizar una reserva**
 app.put('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
   const { fecha_hora, servicios } = req.body;
 
-  // Actualizar la fecha y hora de la reserva
+  // 3.4 Actualizar la fecha y hora de la reserva
   const queryActualizarReserva = 'UPDATE reservas SET fecha_hora = ? WHERE id_reserva = ?';
   db.query(queryActualizarReserva, [fecha_hora, id_reserva], (err, result) => {
     if (err) {
@@ -116,7 +119,7 @@ app.put('/api/reservas/:id_reserva', (req, res) => {
       return res.status(500).send('Error al actualizar la reserva');
     }
 
-    // Eliminar los servicios existentes de la reserva
+    // 3.5 Eliminar los servicios existentes de la reserva
     const queryEliminarServicios = 'DELETE FROM reserva_servicio WHERE id_reserva = ?';
     db.query(queryEliminarServicios, [id_reserva], (err) => {
       if (err) {
@@ -124,7 +127,7 @@ app.put('/api/reservas/:id_reserva', (req, res) => {
         return res.status(500).send('Error al eliminar los servicios');
       }
 
-      // Insertar los nuevos servicios
+      // 4 Insertar los nuevos servicios
       const queryInsertarServicios = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES ?';
       const serviciosData = servicios.map(servicioId => [id_reserva, servicioId]);
 
@@ -140,11 +143,11 @@ app.put('/api/reservas/:id_reserva', (req, res) => {
   });
 });
 
-// **5. Ruta para eliminar una reserva**
+// 3.6 Ruta para eliminar una reserva**
 app.delete('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
 
-  // Eliminar la reserva
+  // 3.7 Eliminar la reserva
   const query = 'DELETE FROM reservas WHERE id_reserva = ?';
 
   db.query(query, [id_reserva], (err, result) => {
@@ -161,7 +164,7 @@ app.delete('/api/reservas/:id_reserva', (req, res) => {
   });
 });
 
-// **6. Ruta para obtener todas las reservas de un usuario específico**
+// 3.8 Ruta para obtener todas las reservas de un usuario específico**
 app.get('/api/reservas/:id_usuario', (req, res) => {
   const { id_usuario } = req.params;
   const query = `
@@ -190,37 +193,13 @@ app.get('/api/reservas/:id_usuario', (req, res) => {
   });
 });
 
-// **7. Ruta de registro de usuario (encriptación de contraseñas)**
-app.post('/api/register', async (req, res) => {
-  const { nombre_usuario, password, email } = req.body;
-
-  try {
-    // Encriptar la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);  // 10 es el número de salt rounds
-
-    // Consulta para insertar el usuario en la base de datos
-    const query = 'INSERT INTO usuarios (nombre_usuario, password_hash, email) VALUES (?, ?, ?)';
-    db.query(query, [nombre_usuario, hashedPassword, email], (err, result) => {
-      if (err) {
-        console.error('Error al registrar el usuario:', err);
-        return res.status(500).send('Error al registrar el usuario');
-      }
-
-      res.status(201).send('Usuario registrado correctamente');
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al procesar la contraseña');
-  }
-});
-
-// **8. Ruta de login para el usuario (comparar contraseñas y generar JWT)**
+// 5. Ruta de login para el usuario (comparar contraseñas y generar JWT)**
 app.post('/api/login', (req, res) => {
-  const { nombre_usuario, password } = req.body;
+  const { email, password } = req.body;
 
   // Consulta para obtener el usuario de la base de datos
-  const query = 'SELECT * FROM usuarios WHERE nombre_usuario = ?';
-  db.query(query, [nombre_usuario], async (err, results) => {
+  const query = 'SELECT * FROM usuarios WHERE email = ?';
+  db.query(query, [email], (err, results) => {
     if (err) {
       console.error('Error al buscar el usuario:', err);
       return res.status(500).send('Error al buscar el usuario');
@@ -232,24 +211,22 @@ app.post('/api/login', (req, res) => {
 
     const user = results[0];  // El primer resultado (solo debería haber uno)
 
-    // Comparar la contraseña ingresada con la almacenada
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-
-    if (isMatch) {
+    // Comparar la contraseña ingresada con la almacenada (sin encriptación)
+    if (password === user.password_hash) {
       // Generar el JWT
       const token = jwt.sign({ id_usuario: user.id_usuario }, process.env.JWT_SECRET, {
         expiresIn: '1h',  // El token expirará en 1 hora
       });
 
-      // Devolver el JWT al usuario
-      res.status(200).json({ token });
+      // Devolver el token al cliente
+      res.json({ token });
     } else {
-      res.status(400).send('Contraseña incorrecta');
+      res.status(400).send('Credenciales incorrectas');
     }
   });
 });
 
-// Arrancar el servidor
+// 6. Escuchar el servidor en el puerto 3000
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });
