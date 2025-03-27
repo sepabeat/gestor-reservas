@@ -23,7 +23,7 @@ const db = mysql.createConnection({
   user: 'root',              // Usuario de MySQL (cambiar si es necesario)
   password: '',              // Contraseña de MySQL (cambiar si es necesario)
   database: 'gestor_reservas',
-  port: 3307                 // MySQL de mi pc está en el puerto 3307
+  port: 3306                 // MySQL de mi pc está en el puerto 3306
 });
 
 // 1.1 Conexión a la base de datos
@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
   res.send('¡Servidor funcionando!');
 });
 
-// 2.1 Ruta para obtener los servicios según el tipo de peluquería**
+// 2.1 Ruta para obtener los servicios según el tipo de peluquería
 app.get('/api/servicios/:categoria', (req, res) => {
   const { categoria } = req.params;
 
@@ -64,13 +64,26 @@ app.get('/api/servicios/:categoria', (req, res) => {
   });
 });
 
-// 3. Ruta para crear una nueva reserva**
+// 3. Ruta para crear una nueva reserva
 app.post('/api/reservas', (req, res) => {
-  const { id_usuario, fecha_hora, servicios } = req.body;
+  console.log("datos recibidos:", req.body); // Para comprobar los datos que está recibiendo el servidor del frontend
+
+  const { id_usuario, fecha_hora, servicio, tipo } = req.body;
+
+  // Validar que todos los campos estén presentes
+  if (!id_usuario || !fecha_hora || !servicio || !tipo) {
+    console.log("Faltan datos requeridos");
+    return res.status(400).send('Faltan datos requeridos: id_usuario, fecha_hora, servicio y tipo');
+  }
+
+  // Formatear la fecha para MySQL (asegurarse de que esté en formato 'YYYY-MM-DD HH:mm:ss')
+  const fechaFormateada = new Date(fecha_hora).toISOString().slice(0, 19).replace('T', ' ');
+
+  console.log("Fecha formateada:", fechaFormateada);
 
   // 3.1 Insertar la reserva principal
   const queryReserva = 'INSERT INTO reservas (id_usuario, fecha_hora, estado) VALUES (?, ?, ?)';
-  db.query(queryReserva, [id_usuario, fecha_hora, 'pendiente'], (err, result) => {
+  db.query(queryReserva, [id_usuario, fechaFormateada, 'pendiente'], (err, result) => {
     if (err) {
       console.error('Error al crear la reserva:', err);
       return res.status(500).send('Error al crear la reserva');
@@ -79,22 +92,44 @@ app.post('/api/reservas', (req, res) => {
     // Obtener el ID de la reserva recién creada
     const id_reserva = result.insertId;
 
-    // Insertar los servicios relacionados con la reserva
-    const queryReservaServicio = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES ?';
-    const serviciosData = servicios.map(servicioId => [id_reserva, servicioId]);
-
-    db.query(queryReservaServicio, [serviciosData], (err) => {
+    // Buscar el servicio correspondiente a la categoría
+    const queryServicio = `
+      SELECT id_servicio FROM servicios
+      WHERE nombre = ? AND categoria = ?
+    `;
+    db.query(queryServicio, [servicio, tipo], (err, results) => {
       if (err) {
-        console.error('Error al asociar los servicios con la reserva:', err);
-        return res.status(500).send('Error al asociar los servicios con la reserva');
+        console.error('Error al obtener el servicio:', err);
+        return res.status(500).send('Error al obtener el servicio');
+      }
+        console.log('Resultados del servicio:', results); // Ver los resultados de la consulta
+      if (results.length === 0) {
+      console.log('Servicio no encontrado para el tipo:', servicio, tipo);
+        return res.status(400).send('Servicio no encontrado o no corresponde a la categoría');
       }
 
-      res.status(201).send('Reserva creada con éxito');
+      // Obtener el ID del servicio
+      const id_servicio = results[0].id_servicio;
+
+      // Insertar los servicios relacionados con la reserva
+      const queryReservaServicio = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES ?';
+      const serviciosData = [[id_reserva, id_servicio]];
+
+      db.query(queryReservaServicio, [serviciosData], (err) => {
+        if (err) {
+          console.error('Error al asociar el servicio con la reserva:', err);
+          return res.status(500).send('Error al asociar el servicio con la reserva');
+        }
+
+        res.status(201).send('Reserva creada con éxito');
+      });
     });
   });
 });
 
-// 3.2 Ruta para obtener todas las reservas**
+
+
+// 3.2 Ruta para obtener todas las reservas
 app.get('/api/reservas', (req, res) => {
   db.query('SELECT * FROM reservas', (err, results) => {
     if (err) {
@@ -106,7 +141,7 @@ app.get('/api/reservas', (req, res) => {
   });
 });
 
-// 3.3. Ruta para actualizar una reserva**
+// 3.3 Ruta para actualizar una reserva
 app.put('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
   const { fecha_hora, servicios } = req.body;
@@ -143,7 +178,7 @@ app.put('/api/reservas/:id_reserva', (req, res) => {
   });
 });
 
-// 3.6 Ruta para eliminar una reserva**
+// 3.6 Ruta para eliminar una reserva
 app.delete('/api/reservas/:id_reserva', (req, res) => {
   const { id_reserva } = req.params;
 
@@ -164,7 +199,7 @@ app.delete('/api/reservas/:id_reserva', (req, res) => {
   });
 });
 
-// 3.8 Ruta para obtener todas las reservas de un usuario específico**
+// 3.8 Ruta para obtener todas las reservas de un usuario específico
 app.get('/api/reservas/:id_usuario', (req, res) => {
   const { id_usuario } = req.params;
   const query = `
@@ -193,7 +228,7 @@ app.get('/api/reservas/:id_usuario', (req, res) => {
   });
 });
 
-// 5. Ruta de login para el usuario (comparar contraseñas y generar JWT)**
+// 5. Ruta de login para el usuario (comparar contraseñas y generar JWT)
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -218,8 +253,8 @@ app.post('/api/login', (req, res) => {
         expiresIn: '1h',  // El token expirará en 1 hora
       });
 
-      // Devolver el token al cliente
-      res.json({ token });
+      // Devolver el token y el id_usuario al cliente
+      res.json({ token, id_usuario: user.id_usuario });
     } else {
       res.status(400).send('Credenciales incorrectas');
     }

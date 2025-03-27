@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Función para cargar los servicios según el tipo de peluquería seleccionado
     tipoPeluqueria.addEventListener("change", (event) => {
         const tipoSeleccionado = event.target.value;
-        console.log("Tipo seleccionado:", tipoSeleccionado); // Añadir esta línea para verificar el valor
+        console.log("Tipo seleccionado:", tipoSeleccionado); // Ver qué tipo se selecciona
 
         servicioSelect.innerHTML = ""; // Limpiar las opciones anteriores
 
@@ -38,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     servicioSelect.innerHTML = '<option value="">Error al cargar servicios</option>';
                 });
         } else {
-            // Si no se selecciona un tipo de peluquería, se resetean las opciones de servicio
             servicioSelect.innerHTML = '<option value="">Selecciona un tipo de peluquería primero</option>';
         }
     });
@@ -51,21 +50,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const tipo = tipoPeluqueria.value;
         const servicio = servicioSelect.value;
         const fecha = document.getElementById("fecha").value;
+        const id_usuario = localStorage.getItem("id_usuario"); // Obtener id_usuario del localStorage
 
         // Validar que todos los campos estén completos
-        if (!tipo || !servicio || !fecha) {
+        console.log("Valores capturados:", { id_usuario, tipo, servicio, fecha });
+        if (!tipo || !servicio || !fecha || !id_usuario) {
             alert("Por favor, completa todos los campos.");
             return;
         }
 
-        // Aquí puedes realizar la solicitud POST para guardar la reserva en el backend
-        // Ejemplo: envío de datos a la API para reservar la cita
+        // Convertir la fecha al formato ISO (si no está en ese formato)
+        const fechaISO = new Date(fecha).toISOString();
+
+        // Mostrar datos antes de enviar la solicitud para depuración
+        console.log("Enviando reserva con los siguientes datos:", { id_usuario, tipo, servicio, fechaISO });
+
+        // Enviar la solicitud al backend
         fetch('http://localhost:3000/api/reservas', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ tipo, servicio, fecha })
+            body: JSON.stringify({ id_usuario, tipo, servicio, fecha: fechaISO })
         })
         .then(response => {
             if (!response.ok) {
@@ -74,10 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return response.json();
         })
         .then(data => {
-            // Mostrar mensaje de éxito si la reserva se realizó correctamente
             alert("Reserva realizada con éxito");
-            // Opcional: Limpiar el formulario después de hacer la reserva
-            document.getElementById("reservaForm").reset();
+            document.getElementById("reservaForm").reset(); // Limpiar el formulario
         })
         .catch(error => {
             console.error("Error al realizar la reserva:", error);

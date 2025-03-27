@@ -1,6 +1,6 @@
 // Capturamos el evento submit del formulario
 document.getElementById('login-form').addEventListener('submit', function(event) {
-  event.preventDefault();  // Evitar el comportamiento por defecto del formulario
+  event.preventDefault(); // Evitar el comportamiento por defecto del formulario
 
   // Recoger los datos del formulario
   const email = document.getElementById('email').value;
@@ -12,23 +12,28 @@ document.getElementById('login-form').addEventListener('submit', function(event)
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email: email, password: password }),
+    body: JSON.stringify({ email, password }),
   })
   .then(response => {
-    if (!response.ok) {  // Verificar si la respuesta no fue OK
+    if (!response.ok) {
       throw new Error('Error en la autenticación');
     }
     return response.json();
   })
   .then(data => {
-    if (data.token) {
-      // Almacenar el token JWT en el localStorage o sessionStorage
+    console.log("Respuesta del servidor:", data); // Depuración
+
+    if (data.token && data.id_usuario) {
+      // Almacenar token JWT y ID del usuario en localStorage
       localStorage.setItem('jwtToken', data.token);
+      localStorage.setItem('id_usuario', data.id_usuario);
+
       alert('Inicio de sesión exitoso');
-      // Redirigir a una página de inicio o dashboard
-      window.location.href = 'index.html';  // Redirigir a la página correspondiente
+
+      // Redirigir a la página de inicio o dashboard
+      window.location.href = 'index.html';
     } else {
-      alert('Credenciales incorrectas');
+      alert('Credenciales incorrectas o falta de datos en la respuesta');
     }
   })
   .catch(error => {
