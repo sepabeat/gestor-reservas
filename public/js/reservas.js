@@ -59,8 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Convertir la fecha al formato ISO (si no está en ese formato)
-        const fechaISO = new Date(fecha).toISOString();
+        // Convertir la fecha local al formato ISO (ajustada a la zona horaria local)
+        const fechaLocal = new Date(fecha);
+        const fechaISO = new Date(fechaLocal.getTime() - fechaLocal.getTimezoneOffset() * 60000).toISOString();
 
         // Mostrar datos antes de enviar la solicitud para depuración
         console.log("Enviando reserva con los siguientes datos:", { id_usuario, tipo, servicio, fechaISO });
