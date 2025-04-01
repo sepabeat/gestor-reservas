@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id_usuario, tipo, servicio, fecha: fechaISO })
+            body: JSON.stringify({ id_usuario, tipo, servicio, fecha: fechaISO }) // Asegurarse que el campo sea 'fecha' en vez de 'fecha_hora'
         })
         .then(response => {
             if (!response.ok) {
@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return response.json();
         })
         .then(data => {
-            alert("Reserva realizada con éxito");
+            alert(data.message);
             document.getElementById("reservaForm").reset(); // Limpiar el formulario
         })
         .catch(error => {
