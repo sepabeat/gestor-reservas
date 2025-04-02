@@ -49,7 +49,7 @@ app.get('/api/servicios/:categoria', (req, res) => {
 
 app.post('/api/reservas', (req, res) => {
   console.log("Datos recibidos:", req.body);
-  const { id_usuario, fecha, servicio, tipo } = req.body; // Cambié 'fecha_hora' por 'fecha'
+  const { id_usuario, fecha, servicio, tipo } = req.body;
   if (!id_usuario || !fecha || !servicio || !tipo) {
     return res.status(400).send('Faltan datos requeridos');
   }
@@ -58,28 +58,34 @@ app.post('/api/reservas', (req, res) => {
   console.log("Fecha formateada:", fechaFormateada);
 
   const queryReserva = 'INSERT INTO reservas (id_usuario, fecha_hora, estado) VALUES (?, ?, ?)';
+  console.log("Consulta reserva:", queryReserva); // Log de la consulta
   db.query(queryReserva, [id_usuario, fechaFormateada, 'pendiente'], (err, result) => {
     if (err) {
       console.error('Error al crear la reserva:', err);
       return res.status(500).send('Error al crear la reserva');
     }
+    console.log("Resultado reserva:", result); // Log del resultado
     const id_reserva = result.insertId;
     const queryServicio = 'SELECT id_servicio FROM servicios WHERE nombre = ? AND categoria = ?';
+    console.log("Consulta servicio:", queryServicio); // Log de la consulta
     db.query(queryServicio, [servicio, tipo], (err, results) => {
       if (err) {
         console.error('Error al obtener el servicio:', err);
         return res.status(500).send('Error al obtener el servicio');
       }
+      console.log("Resultado servicio:", results); // Log del resultado
       if (results.length === 0) {
         return res.status(400).send('Servicio no encontrado o no corresponde a la categoría');
       }
       const id_servicio = results[0].id_servicio;
       const queryReservaServicio = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)';
+      console.log("Consulta reserva_servicio:", queryReservaServicio); // Log de la consulta
       db.query(queryReservaServicio, [id_reserva, id_servicio], (err) => {
         if (err) {
           console.error('Error al asociar el servicio con la reserva:', err);
           return res.status(500).send('Error al asociar el servicio con la reserva');
         }
+        console.log("Reserva creada con éxito");
         res.status(201).json({ message: 'Reserva creada con éxito' });
       });
     });
