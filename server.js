@@ -103,6 +103,66 @@ app.get('/api/reservas', (req, res) => {
   });
 });
 
+// Nueva ruta para obtener las reservas del usuario autenticado
+app.get('/api/reservas/usuario', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send('No hay token proporcionado');
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send('Token inválido');
+        }
+
+        const userId = decoded.id_usuario;
+
+        const query = `
+            SELECT
+                r.id_reserva,
+                r.fecha_hora,
+                r.estado,
+                GROUP_CONCAT(s.nombre SEPARATOR ', ') AS servicios
+            FROM reservas r
+            JOIN reserva_servicio rs ON r.id_reserva = rs.id_reserva
+            JOIN servicios s ON rs.id_servicio = s.id_servicio
+            WHERE r.id_usuario = ?
+            GROUP BY r.id_reserva
+            ORDER BY r.fecha_hora DESC
+        `;
+
+        db.query(query, [userId], (err, results) => {
+            if (err) {
+                console.error('Error al obtener las reservas del usuario:', err);
+                return res.status(500).send('Error al obtener las reservas del usuario');
+            }
+
+            res.json(results);
+        });
+    });
+});
+
+// Nueva ruta para cancelar una reserva
+app.put('/api/reservas/:id', (req, res) => {
+    const { id } = req.params;
+
+    const query = 'UPDATE reservas SET estado = ? WHERE id_reserva = ?';
+    db.query(query, ['cancelada', id], (err, result) => {
+        if (err) {
+            console.error('Error al cancelar la reserva:', err);
+            return res.status(500).send('Error al cancelar la reserva');
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send('Reserva no encontrada');
+        }
+
+        console.log(`Reserva con ID ${id} cancelada con éxito`);
+        res.send('Reserva cancelada con éxito');
+    });
+});
+
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
   const query = 'SELECT * FROM usuarios WHERE email = ?';
