@@ -126,6 +126,73 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+// Nueva ruta para obtener la información del usuario
+app.get('/api/user', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Obtener el token del encabezado
+
+  if (!token) {
+    return res.status(401).send('No hay token proporcionado');
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send('Token inválido');
+    }
+
+    const userId = decoded.id_usuario;
+
+    const query = 'SELECT id_usuario, nombre, email, rol FROM usuarios WHERE id_usuario = ?';
+    db.query(query, [userId], (err, results) => {
+      if (err) {
+        console.error('Error al obtener la información del usuario:', err);
+        return res.status(500).send('Error al obtener la información del usuario');
+      }
+
+      if (results.length === 0) {
+        return res.status(404).send('Usuario no encontrado');
+      }
+
+      const user = results[0];
+      res.json({ id_usuario: user.id_usuario, nombre: user.nombre, email: user.email, rol: user.rol }); // Enviar solo la información necesaria
+    });
+  });
+});
+
+// Nueva ruta para registrar un usuario
+app.post('/api/register', (req, res) => {
+    const { nombre, email, password } = req.body;
+
+    // Validar que todos los campos estén presentes
+    if (!nombre || !email || !password) {
+        return res.status(400).send('Faltan datos para el registro');
+    }
+
+    // Validar que el email no exista ya (opcional, pero recomendable)
+    const checkEmailQuery = 'SELECT * FROM usuarios WHERE email = ?';
+    db.query(checkEmailQuery, [email], (err, results) => {
+        if (err) {
+            console.error('Error al verificar el email:', err);
+            return res.status(500).send('Error al verificar el email');
+        }
+
+        if (results.length > 0) {
+            return res.status(400).send('El email ya está registrado');
+        }
+
+        // Insertar el nuevo usuario en la base de datos
+        const insertUserQuery = 'INSERT INTO usuarios (nombre, email, password_hash) VALUES (?, ?, ?)';
+        db.query(insertUserQuery, [nombre, email, password], (err, result) => {  //Usamos la contraseña sin encriptar
+            if (err) {
+                console.error('Error al registrar el usuario:', err);
+                return res.status(500).send('Error al registrar el usuario');
+            }
+
+            console.log('Usuario registrado con éxito');
+            res.status(201).send('Usuario registrado con éxito');
+        });
+    });
+});
+
 app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });

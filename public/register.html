@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión</title>
+    <title>Registrarse</title>
     <link rel="stylesheet" href="./css/styles.css">
-    <script src="./js/app.js" defer></script> <!-- Si tienes algún script común, añádelo aquí -->
-</head>
+    <script src="./js/app.js" defer></script> </head>
 <body>
 
 <header>
@@ -19,26 +18,24 @@
             <li><a href="login.html">Iniciar sesión</a></li>
         </ul>
     </nav>
-
-    <div id="user-info" style="position: absolute; top: 10px; right: 10px; color: white;">
-        <span id="user-name"></span>
-        <button id="logout-btn" style="background: none; border: none; color: white; cursor: pointer;">Cerrar Sesión</button>
-    </div>
 </header>
 
 <main>
     <section id="intro">
-        <h2>Iniciar Sesión</h2>
-        <form id="login-form">
+        <h2>Registrarse</h2>
+        <form id="register-form">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Nombre" required/>
+
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" placeholder="email" required/>
+            <input type="email" id="email" name="email" placeholder="Email" required/>
 
             <label for="password">Contraseña</label>
             <input type="password" id="password" name="password" placeholder="Contraseña" required/>
 
-            <button type="submit">Iniciar Sesión</button>
+            <button type="submit">Registrarse</button>
         </form>
-        <p>¿No tienes cuenta? <a href="register.html">Regístrate aquí</a></p>
+        <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
     </section>
 </main>
 
@@ -46,6 +43,5 @@
     <p>&copy; 2025 Gestor de Reservas</p>
 </footer>
 
-<script src="./js/login.js" defer></script> <!-- El script específico para el login -->
-</body>
+<script src="./js/register.js" defer></script> </body>
 </html>
