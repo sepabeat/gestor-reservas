@@ -1,9 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Código de app.js (para mostrar la info del usuario)
+    const tipoPeluqueria = document.getElementById("tipo");
+    const servicioSelect = document.getElementById("servicio");
+    const reservaForm = document.getElementById("reservaForm");
     const userNameElement = document.getElementById('user-name');
     const logoutButton = document.getElementById('logout-btn');
-
+    const adminLinkContainer = document.getElementById('admin-link-container');
     const token = localStorage.getItem('jwtToken');
+    const id_usuario = localStorage.getItem('id_usuario');
 
     if (token) {
         fetch('http://localhost:3000/api/user', {
@@ -19,31 +22,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.removeItem('id_usuario');
                 window.location.href = 'login.html';
             });
+
+            if (user.rol === 'admin') {
+                const adminLink = document.createElement('a');
+                adminLink.href = 'admin-reservas.html';
+                adminLink.textContent = 'Admin Reservas';
+                const adminLi = document.createElement('li');
+                adminLi.appendChild(adminLink);
+                adminLinkContainer.appendChild(adminLi);
+            }
         })
         .catch(error => {
             console.error('Error al obtener la información del usuario:', error);
             userNameElement.textContent = 'Usuario no autenticado';
-            logoutButton.style.display = 'none'; // Ocultar el botón de cerrar sesión
+            logoutButton.style.display = 'none';
         });
     } else {
         userNameElement.textContent = 'Usuario no autenticado';
-        logoutButton.style.display = 'none'; // Ocultar el botón de cerrar sesión
+        logoutButton.style.display = 'none';
     }
 
-    const tipoPeluqueria = document.getElementById("tipo");
-    const servicioSelect = document.getElementById("servicio");
+    if (!token || !id_usuario) {
+        alert('Debes iniciar sesión para realizar una reserva.');
+        window.location.href = 'login.html'; // Redirigir a la página de inicio de sesión
+        return; // Detener la ejecución del resto del código
+    }
 
     // Función para cargar los servicios según el tipo de peluquería seleccionado
     tipoPeluqueria.addEventListener("change", (event) => {
         const tipoSeleccionado = event.target.value;
-        console.log("Tipo seleccionado:", tipoSeleccionado); // Ver qué tipo se selecciona
+        console.log("Tipo seleccionado:", tipoSeleccionado);
 
-        servicioSelect.innerHTML = ""; // Limpiar las opciones anteriores
+        servicioSelect.innerHTML = "";
 
         if (tipoSeleccionado) {
             console.log(`Haciendo solicitud a: http://localhost:3000/api/servicios/${tipoSeleccionado}`);
 
-            // Hacer la solicitud al backend para obtener los servicios
             fetch(`http://localhost:3000/api/servicios/${tipoSeleccionado}`)
                 .then(response => {
                     if (!response.ok) {
@@ -52,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return response.json();
                 })
                 .then(data => {
-                    // Si hay servicios, agregar las opciones al select
                     if (data.length > 0) {
                         data.forEach(servicio => {
                             let option = document.createElement("option");
@@ -74,36 +87,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Manejar el formulario de reserva
-    document.getElementById("reservaForm").addEventListener("submit", (event) => {
+    reservaForm.addEventListener("submit", (event) => {
         event.preventDefault();
 
-        // Obtener los valores del formulario
         const tipo = tipoPeluqueria.value;
         const servicio = servicioSelect.value;
         const fecha = document.getElementById("fecha").value;
-        const id_usuario = localStorage.getItem("id_usuario"); // Obtener id_usuario del localStorage
 
-        // Validar que todos los campos estén completos
-        console.log("Valores capturados:", { id_usuario, tipo, servicio, fecha });
         if (!tipo || !servicio || !fecha || !id_usuario) {
             alert("Por favor, completa todos los campos.");
             return;
         }
 
-        // Convertir la fecha local al formato ISO (ajustada a la zona horaria local)
         const fechaLocal = new Date(fecha);
         const fechaISO = new Date(fechaLocal.getTime() - fechaLocal.getTimezoneOffset() * 60000).toISOString();
 
-        // Mostrar datos antes de enviar la solicitud para depuración
         console.log("Enviando reserva con los siguientes datos:", { id_usuario, tipo, servicio, fechaISO });
 
-        // Enviar la solicitud al backend
         fetch('http://localhost:3000/api/reservas', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id_usuario, tipo, servicio, fecha: fechaISO }) // Asegurarse que el campo sea 'fecha' en vez de 'fecha_hora'
+            body: JSON.stringify({ id_usuario, tipo, servicio, fecha: fechaISO })
         })
         .then(response => {
             if (!response.ok) {
@@ -113,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .then(data => {
             alert(data.message);
-            document.getElementById("reservaForm").reset(); // Limpiar el formulario
+            reservaForm.reset();
         })
         .catch(error => {
             console.error("Error al realizar la reserva:", error);

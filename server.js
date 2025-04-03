@@ -48,48 +48,62 @@ app.get('/api/servicios/:categoria', (req, res) => {
 });
 
 app.post('/api/reservas', (req, res) => {
-  console.log("Datos recibidos:", req.body);
-  const { id_usuario, fecha, servicio, tipo } = req.body;
-  if (!id_usuario || !fecha || !servicio || !tipo) {
-    return res.status(400).send('Faltan datos requeridos');
-  }
-
-  const fechaFormateada = new Date(fecha).toISOString().slice(0, 19).replace('T', ' ');
-  console.log("Fecha formateada:", fechaFormateada);
-
-  const queryReserva = 'INSERT INTO reservas (id_usuario, fecha_hora, estado) VALUES (?, ?, ?)';
-  console.log("Consulta reserva:", queryReserva); // Log de la consulta
-  db.query(queryReserva, [id_usuario, fechaFormateada, 'pendiente'], (err, result) => {
-    if (err) {
-      console.error('Error al crear la reserva:', err);
-      return res.status(500).send('Error al crear la reserva');
+    console.log("Datos recibidos:", req.body);
+    const { id_usuario, fecha, servicio, tipo } = req.body;
+    if (!id_usuario || !fecha || !servicio || !tipo) {
+        return res.status(400).send('Faltan datos requeridos');
     }
-    console.log("Resultado reserva:", result); // Log del resultado
-    const id_reserva = result.insertId;
-    const queryServicio = 'SELECT id_servicio FROM servicios WHERE nombre = ? AND categoria = ?';
-    console.log("Consulta servicio:", queryServicio); // Log de la consulta
-    db.query(queryServicio, [servicio, tipo], (err, results) => {
-      if (err) {
-        console.error('Error al obtener el servicio:', err);
-        return res.status(500).send('Error al obtener el servicio');
-      }
-      console.log("Resultado servicio:", results); // Log del resultado
-      if (results.length === 0) {
-        return res.status(400).send('Servicio no encontrado o no corresponde a la categoría');
-      }
-      const id_servicio = results[0].id_servicio;
-      const queryReservaServicio = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)';
-      console.log("Consulta reserva_servicio:", queryReservaServicio); // Log de la consulta
-      db.query(queryReservaServicio, [id_reserva, id_servicio], (err) => {
+
+    // Verificar si el usuario existe (¡importante!)
+    const checkUserQuery = 'SELECT id_usuario FROM usuarios WHERE id_usuario = ?';
+    db.query(checkUserQuery, [id_usuario], (err, results) => {
         if (err) {
-          console.error('Error al asociar el servicio con la reserva:', err);
-          return res.status(500).send('Error al asociar el servicio con la reserva');
+            console.error('Error al verificar el usuario:', err);
+            return res.status(500).send('Error al verificar el usuario');
         }
-        console.log("Reserva creada con éxito");
-        res.status(201).json({ message: 'Reserva creada con éxito' });
-      });
+
+        if (results.length === 0) {
+            return res.status(400).send('Usuario no encontrado');
+        }
+
+        // Si el usuario existe, proceder con la creación de la reserva
+        const fechaFormateada = new Date(fecha).toISOString().slice(0, 19).replace('T', ' ');
+        console.log("Fecha formateada:", fechaFormateada);
+
+        const queryReserva = 'INSERT INTO reservas (id_usuario, fecha_hora, estado) VALUES (?, ?, ?)';
+        console.log("Consulta reserva:", queryReserva);
+        db.query(queryReserva, [id_usuario, fechaFormateada, 'pendiente'], (err, result) => {
+            if (err) {
+                console.error('Error al crear la reserva:', err);
+                return res.status(500).send('Error al crear la reserva');
+            }
+            console.log("Resultado reserva:", result);
+            const id_reserva = result.insertId;
+            const queryServicio = 'SELECT id_servicio FROM servicios WHERE nombre = ? AND categoria = ?';
+            console.log("Consulta servicio:", queryServicio);
+            db.query(queryServicio, [servicio, tipo], (err, results) => {
+                if (err) {
+                    console.error('Error al obtener el servicio:', err);
+                    return res.status(500).send('Error al obtener el servicio');
+                }
+                console.log("Resultado servicio:", results);
+                if (results.length === 0) {
+                    return res.status(400).send('Servicio no encontrado o no corresponde a la categoría');
+                }
+                const id_servicio = results[0].id_servicio;
+                const queryReservaServicio = 'INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)';
+                console.log("Consulta reserva_servicio:", queryReservaServicio);
+                db.query(queryReservaServicio, [id_reserva, id_servicio], (err) => {
+                    if (err) {
+                        console.error('Error al asociar el servicio con la reserva:', err);
+                        return res.status(500).send('Error al asociar el servicio con la reserva');
+                    }
+                    console.log("Reserva creada con éxito");
+                    res.status(201).json({ message: 'Reserva creada con éxito' });
+                });
+            });
+        });
     });
-  });
 });
 
 app.get('/api/reservas', (req, res) => {
@@ -184,6 +198,121 @@ app.post('/api/login', (req, res) => {
       res.status(400).send('Credenciales incorrectas');
     }
   });
+});
+
+app.get('/api/admin/reservas/pendientes', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send('No hay token proporcionado');
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send('Token inválido');
+        }
+
+        const userId = decoded.id_usuario;
+
+        // Verificar si el usuario es administrador
+        const checkAdminQuery = 'SELECT rol FROM usuarios WHERE id_usuario = ?';
+        db.query(checkAdminQuery, [userId], (err, results) => {
+            if (err) {
+                console.error('Error al verificar el rol del usuario:', err);
+                return res.status(500).send('Error al verificar el rol del usuario');
+            }
+
+            if (results.length === 0) {
+                return res.status(404).send('Usuario no encontrado');
+            }
+
+            if (results[0].rol !== 'admin') {
+                return res.status(403).send('Acceso no autorizado'); // 403 Forbidden
+            }
+
+            // Si el usuario es administrador, obtener todas las reservas pendientes
+            const query = `
+                SELECT
+                    r.id_reserva,
+                    r.fecha_hora,
+                    r.estado,
+                    GROUP_CONCAT(s.nombre SEPARATOR ', ') AS servicios,
+                    u.nombre AS nombre_usuario
+                FROM reservas r
+                JOIN reserva_servicio rs ON r.id_reserva = rs.id_reserva
+                JOIN servicios s ON rs.id_servicio = s.id_servicio
+                JOIN usuarios u ON r.id_usuario = u.id_usuario
+                WHERE r.estado = 'pendiente'
+                GROUP BY r.id_reserva
+                ORDER BY r.fecha_hora ASC
+            `;
+
+            db.query(query, (err, results) => {
+                if (err) {
+                    console.error('Error al obtener las reservas pendientes:', err);
+                    return res.status(500).send('Error al obtener las reservas pendientes');
+                }
+
+                res.json(results);
+            });
+        });
+    });
+});
+
+// Ruta para cancelar o aprobar una reserva (solo para administradores)
+app.put('/api/reservas/:id', (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body; // Obtener el nuevo estado del cuerpo de la solicitud
+
+    if (estado !== 'cancelada' && estado !== 'confirmada') {
+        return res.status(400).send('Estado no válido');
+    }
+
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send('No hay token proporcionado');
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send('Token inválido');
+        }
+
+        const userId = decoded.id_usuario;
+
+        // Verificar si el usuario es administrador
+        const checkAdminQuery = 'SELECT rol FROM usuarios WHERE id_usuario = ?';
+        db.query(checkAdminQuery, [userId], (err, results) => {
+            if (err) {
+                console.error('Error al verificar el rol del usuario:', err);
+                return res.status(500).send('Error al verificar el rol del usuario');
+            }
+
+            if (results.length === 0) {
+                return res.status(404).send('Usuario no encontrado');
+            }
+
+            if (results[0].rol !== 'admin') {
+                return res.status(403).send('Acceso no autorizado');
+            }
+
+            const query = 'UPDATE reservas SET estado = ? WHERE id_reserva = ?';
+            db.query(query, [estado, id], (err, result) => {
+                if (err) {
+                    console.error('Error al actualizar la reserva:', err);
+                    return res.status(500).send('Error al actualizar la reserva');
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).send('Reserva no encontrada');
+                }
+
+                console.log(`Reserva con ID ${id} actualizada a estado ${estado} con éxito`);
+                res.send(`Reserva actualizada a estado ${estado} con éxito`);
+            });
+        });
+    });
 });
 
 // Nueva ruta para obtener la información del usuario
