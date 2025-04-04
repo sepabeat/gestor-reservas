@@ -6,6 +6,7 @@
     <title>Reservar Cita</title>
     <link rel="stylesheet" href="./css/styles.css">
     <script src="./js/reservas.js" defer></script>
+
 </head>
 <body>
 
@@ -17,13 +18,13 @@
             <li><a href="reservas.html">Reservar</a></li>
             <li><a href="mis-reservas.html">Mis Reservas</a></li>
             <li id="admin-link-container"></li>
-            <li><a href="login.html">Iniciar Sesión</a></li>
+            <li><a href="login.html">Iniciar sesión</a></li>
         </ul>
     </nav>
-
     <div id="user-info" style="position: absolute; top: 10px; right: 10px; color: white;">
         <span id="user-name"></span>
-        <button id="logout-btn" style="background: none; border: none; color: white; cursor: pointer;">Cerrar Sesión</button>
+        <button id="logout-btn" style="background: none; border: none; color: white; cursor: pointer;">Cerrar
+            Sesión</button>
     </div>
 </header>
 
@@ -32,17 +33,15 @@
         <h2>Selecciona tu servicio</h2>
 
         <form id="reservaForm">
-            <label for="tipo">Tipo de Servicio:</label>
-            <select id="tipo" name="tipo">
-                <option value="" disabled selected>Seleccione un servicio</option>
-                <option value="salon_belleza">Salón de Belleza</option>
-                <option value="peluqueria_canina">Peluquería Canina</option>
-            </select>
+            <div id="tipo-servicios-container">
+                <button type="button" value="salon_belleza">Salón de Belleza</button>
+                <button type="button" value="peluqueria_canina">Peluquería Canina</button>
+                <button type="button" value="clinica_veterinaria">Clínica Veterinaria</button>
+                <button type="button" value="restaurantes">Restaurantes</button>
+            </div>
 
-            <label for="servicio">Servicio:</label>
-            <select id="servicio" name="servicio">
-                <option value="">Selecciona un tipo de peluquería primero</option>
-            </select>
+            <div id="servicios-container">
+            </div>
 
             <label for="fecha">Fecha y Hora:</label>
             <input type="datetime-local" id="fecha" name="fecha" required>

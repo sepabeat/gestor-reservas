@@ -1,16 +1,42 @@
-/* Estilos generales para todo el sitio */
+/* ==========================================================================
+   Variables CSS para colores y tamaños comunes
+   ========================================================================== */
+
+:root {
+    /* Colores */
+    --color-principal: #007bff; /* Color principal para botones y enlaces */
+    --color-principal-hover: #0056b3; /* Color al pasar el ratón sobre los elementos principales */
+    --color-fondo: #f4f4f4; /* Color de fondo general de la página */
+    --color-texto: #333; /* Color del texto general */
+    --color-servicio-seleccionado: #00bcd4; /* Color de fondo del servicio seleccionado */
+    --color-servicio-hover: #f0f0f0; /* Color de fondo al pasar el ratón sobre los servicios */
+    --color-servicio-eliminar: #ff6b6b; /* Color para los botones de eliminar/cancelar */
+    --color-servicio-eliminar-hover: #e00000; /* Color al pasar el ratón sobre los botones de eliminar/cancelar */
+    --color-aprobacion: #4caf50; /* Color para los botones de aprobar */
+    --color-aprobacion-hover: #45a049; /* Color al pasar el ratón sobre los botones de aprobar */
+
+    /* Tamaños */
+    --espaciado-seccion: 20px;
+    --radio-borde: 5px;
+}
+
+/* ==========================================================================
+   Estilos generales para todo el sitio
+   ========================================================================== */
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     text-align: center;
-    background-color: #f4f4f4;
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
 }
 
 header {
     background: #333;
     color: white;
-    padding: 10px 0;
+    padding: var(--espaciado-seccion) 0;
 }
 
 nav ul {
@@ -28,18 +54,30 @@ nav ul li a {
     text-decoration: none;
 }
 
-/* Estilos específicos para la página de Login */
+a {
+    color: var(--color-principal);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Estilos para la página de Login
+   ========================================================================== */
+
 #intro {
     margin: 50px auto;
-    padding: 20px;
+    padding: var(--espaciado-seccion);
     max-width: 600px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    border-radius: var(--radio-borde);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-    margin-bottom: 20px;
+    margin-bottom: var(--espaciado-seccion);
 }
 
 form {
@@ -60,65 +98,289 @@ input {
     padding: 8px;
     margin-top: 5px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: var(--radio-borde);
 }
 
 button {
     padding: 10px 20px;
     border: none;
-    background: #007bff;
+    background-color: var(--color-principal);
     color: white;
     font-size: 16px;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: var(--radio-borde);
     margin-top: 15px;
     width: 100%;
 }
 
 button:hover {
-    background: #0056b3;
+    background-color: var(--color-principal-hover);
+}
+
+button:focus,
+input:focus,
+select:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* box-shadow en focus */
 }
 
 p {
-    margin-top: 20px;
+    margin-top: var(--espaciado-seccion);
 }
 
-a {
-    color: #007bff;
-    text-decoration: none;
-}
+/* ==========================================================================
+   Estilos para la página de reservas
+   ========================================================================== */
 
-a:hover {
-    text-decoration: underline;
-}
-
-/* Estilos para la página de reservas */
 #formularioReserva {
     margin: 50px auto;
-    padding: 20px;
+    padding: var(--espaciado-seccion);
     max-width: 600px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    border-radius: var(--radio-borde);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-form {
+#tipo-servicios-container {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: var(--espaciado-seccion);
 }
 
-label {
-    margin-top: 10px;
+#tipo-servicios-container button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: var(--radio-borde);
+    background-color: var(--color-principal);
+    color: white;
+    cursor: pointer;
+}
+
+#tipo-servicios-container button:hover {
+    background-color: var(--color-principal-hover);
+}
+
+#servicios-container {
+    display: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: var(--espaciado-seccion);
+}
+
+#servicios-container button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: var(--radio-borde);
+    background-color: white;
+    color: black;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#servicios-container button:hover {
+    background-color: var(--color-servicio-hover);
+}
+
+#servicios-container button.servicio-btn-seleccionado {
+    background-color: var(--color-servicio-seleccionado);
+    color: white;
+    border-color: var(--color-servicio-seleccionado);
+}
+
+#servicios-container button.eliminar-btn-seleccionado {
+    background-color: var(--color-servicio-eliminar);
+    color: white;
+    border-color: var(--color-servicio-eliminar);
+}
+
+#reservaForm label {
+    margin-top: var(--espaciado-seccion);
     font-weight: bold;
+    display: block;
 }
 
-select, input {
+#reservaForm input {
+    width: 100%;
     padding: 8px;
     margin-top: 5px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: var(--radio-borde);
 }
 
-button {
-    margin-top: 15px;
+#reservaForm button[type="submit"] {
+    margin-top: var(--espaciado-seccion);
+    padding: 10px 20px;
+    border: none;
+    background-color: var(--color-aprobacion);
+    color: white;
+    border-radius: var(--radio-borde);
+    cursor: pointer;
+}
+
+#reservaForm button[type="submit"]:hover {
+    background-color: var(--color-aprobacion-hover);
+}
+
+/* ==========================================================================
+   Estilos para la página de administración de reservas
+   ========================================================================== */
+
+#adminReservas {
+    margin: var(--espaciado-seccion) auto;
+    max-width: 800px;
+    background-color: #fff;
+    border-radius: var(--radio-borde);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: var(--espaciado-seccion);
+}
+
+#tabla-admin-reservas {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--espaciado-seccion);
+}
+
+#tabla-admin-reservas th,
+#tabla-admin-reservas td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#tabla-admin-reservas th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#tabla-admin-reservas tr:last-child td {
+    border-bottom: none;
+}
+
+#tabla-admin-reservas tr:hover {
+    background-color: #f5f5f5;
+}
+
+#tabla-admin-reservas .fecha-hora {
+    white-space: nowrap;
+}
+
+#tabla-admin-reservas .servicios {
+    font-style: italic;
+}
+
+#tabla-admin-reservas .estado {
+    font-weight: bold;
+}
+
+#tabla-admin-reservas .acciones {
+    text-align: center;
+}
+
+#tabla-admin-reservas .acciones button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: var(--radio-borde);
+    cursor: pointer;
+    margin: 5px;
+}
+
+#tabla-admin-reservas .acciones .aprobar-btn {
+    background-color: var(--color-aprobacion);
+    color: white;
+}
+
+#tabla-admin-reservas .acciones .aprobar-btn:hover {
+    background-color: var(--color-aprobacion-hover);
+}
+
+#tabla-admin-reservas .acciones .cancelar-btn {
+    background-color: var(--color-servicio-eliminar);
+    color: white;
+}
+
+#tabla-admin-reservas .acciones .cancelar-btn:hover {
+    background-color: var(--color-servicio-eliminar-hover);
+}
+
+/* ==========================================================================
+   Estilos para la página de "Mis Reservas"
+   ========================================================================== */
+
+#misReservas {
+    margin: var(--espaciado-seccion) auto;
+    max-width: 800px;
+    background-color: #fff;
+    border-radius: var(--radio-borde);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: var(--espaciado-seccion);
+}
+
+#tabla-reservas {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--espaciado-seccion);
+}
+
+#tabla-reservas th,
+#tabla-reservas td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#tabla-reservas th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#tabla-reservas tr:last-child td {
+    border-bottom: none;
+}
+
+#tabla-reservas tr:hover {
+    background-color: #f5f5f5;
+}
+
+#tabla-reservas .fecha-hora {
+    white-space: nowrap;
+}
+
+#tabla-reservas .servicios {
+    font-style: italic;
+}
+
+#tabla-reservas .estado {
+    font-weight: bold;
+}
+
+#tabla-reservas .acciones {
+    text-align: center;
+}
+
+#tabla-reservas .acciones button {
+    padding: 8px 12px;
+    border: none;
+    background-color: var(--color-servicio-eliminar);
+    color: white;
+    border-radius: var(--radio-borde);
+    cursor: pointer;
+}
+
+#tabla-reservas .acciones button:hover {
+    background-color: var(--color-servicio-eliminar-hover);
+}
+
+/* ==========================================================================
+   Media queries para responsividad
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    #intro,
+    #formularioReserva,
+    #adminReservas,
+    #misReservas {
+        max-width: 90%;
+    }
 }

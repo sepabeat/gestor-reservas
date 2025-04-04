@@ -32,19 +32,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/servicios/:categoria', (req, res) => {
-  const { categoria } = req.params;
-  if (categoria !== 'salon_belleza' && categoria !== 'peluqueria_canina') {
-    return res.status(400).send('Tipo de peluquería no válido');
-  }
-
-  const query = 'SELECT id_servicio, nombre, precio FROM servicios WHERE categoria = ?';
-  db.query(query, [categoria], (err, results) => {
-    if (err) {
-      console.error('Error al obtener servicios:', err);
-      return res.status(500).send('Error al obtener servicios');
+    const { categoria } = req.params;
+    if (categoria !== 'salon_belleza' && categoria !== 'peluqueria_canina' && categoria !== 'clinica_veterinaria' && categoria !== 'restaurantes') {
+        return res.status(400).send('Tipo de servicio no válido');
     }
-    res.json(results);
-  });
+
+    const query = 'SELECT id_servicio, nombre, precio FROM servicios WHERE categoria = ?';
+    db.query(query, [categoria], (err, results) => {
+        if (err) {
+            console.error('Error al obtener servicios:', err);
+            return res.status(500).send('Error al obtener servicios');
+        }
+        res.json(results);
+    });
 });
 
 app.post('/api/reservas', (req, res) => {
