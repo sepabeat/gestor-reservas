@@ -1,12 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // --- Inicialización de elementos del DOM y obtención del token ---
+    // Se obtienen referencias a elementos HTML como la tabla de reservas del usuario,
+    // el nombre del usuario, el botón de cierre de sesión y el contenedor para el enlace de administración.
+    // También se recupera el token JWT del almacenamiento local.
+
     const tablaReservas = document.getElementById('tabla-reservas').getElementsByTagName('tbody')[0];
     const userNameElement = document.getElementById('user-name');
     const logoutButton = document.getElementById('logout-btn');
     const adminLinkContainer = document.getElementById('admin-link-container');
     const token = localStorage.getItem('jwtToken');
 
+    // --- Verificación y manejo del token de autenticación ---
+    // Se verifica si existe un token. Si existe, se realiza una petición al servidor para obtener
+    // la información del usuario y se actualiza la interfaz mostrando su nombre y configurando
+    // la funcionalidad de cierre de sesión. También se verifica si el usuario tiene rol de administrador
+    // para mostrar el enlace a la gestión de reservas. Si no hay token, se redirige al usuario a la página de login.
+
     if (token) {
-        // Obtener información del usuario
+        // --- Obtención de la información del usuario autenticado ---
         fetch('http://localhost:3000/api/user', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -36,7 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
             logoutButton.style.display = 'none';
         });
 
-        // Obtener las reservas del usuario
+        // --- Obtención y visualización de las reservas del usuario ---
+        // Se realiza una petición al servidor para obtener la lista de reservas del usuario autenticado.
+        // Luego, se itera sobre cada reserva para crear una nueva fila en la tabla HTML
+        // con los detalles de la reserva y un botón para cancelar (si el estado no es 'cancelada').
         fetch('http://localhost:3000/api/reservas/usuario', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -58,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 cellEstado.textContent = reserva.estado;
                 cellEstado.classList.add('estado');
 
-                // Botón de cancelar (solo si el estado no es "cancelada")
+                // Botón de cancelar condicional
                 if (reserva.estado !== 'cancelada') {
                     let btnCancelar = document.createElement('button');
                     btnCancelar.textContent = 'Cancelar';
@@ -66,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     btnCancelar.addEventListener('click', () => cancelarReserva(reserva.id_reserva, row));
                     cellAcciones.appendChild(btnCancelar);
                 } else {
-                    cellAcciones.textContent = 'Cancelada'; // Mostrar texto en lugar del botón
+                    cellAcciones.textContent = 'Cancelada';
                 }
                 cellAcciones.classList.add('acciones');
             });
@@ -76,10 +90,14 @@ document.addEventListener("DOMContentLoaded", () => {
             tablaReservas.innerHTML = '<tr><td colspan="4">No se pudieron cargar las reservas.</td></tr>';
         });
     } else {
-        window.location.href = 'login.html'; // Redirigir si no hay token
+        // --- Redirección si no hay token ---
+        window.location.href = 'login.html';
     }
 
-    // Función para cancelar la reserva
+    // --- Función para cancelar una reserva del usuario ---
+    // Esta función se llama al hacer clic en el botón "Cancelar" de una reserva específica.
+    // Muestra una confirmación al usuario y luego realiza una petición PUT al servidor
+    // para actualizar el estado de la reserva a 'cancelada'. Finalmente, actualiza la interfaz.
     function cancelarReserva(idReserva, row) {
         if (confirm('¿Seguro que quieres cancelar esta reserva?')) {
             fetch(`http://localhost:3000/api/reservas/${idReserva}`, {
@@ -93,8 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(message => {
                 alert(message);
-                row.cells[2].textContent = 'cancelada'; // Actualizar el estado en la tabla
-                row.cells[3].innerHTML = 'Cancelada'; // Actualizar la celda de acciones
+                row.cells[2].textContent = 'cancelada';
+                row.cells[3].innerHTML = 'Cancelada';
             })
             .catch(error => {
                 console.error('Error al cancelar la reserva:', error);
