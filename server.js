@@ -231,7 +231,7 @@ app.get('/api/admin/reservas/pendientes', (req, res) => { // Ruta para obtener l
             }
 
             // Si el usuario es administrador, obtener todas las reservas pendientes
-            const query = ` // Consulta SQL para obtener las reservas pendientes junto con información del usuario y los servicios asociados
+            const query = `
                 SELECT
                     r.id_reserva,
                     r.fecha_hora,
